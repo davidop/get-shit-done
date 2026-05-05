@@ -5,6 +5,12 @@ Invoked by `/gsd-debug` (`commands/gsd/debug.md`).
 Systematic debugging using the scientific method with subagent isolation.
 Orchestrates symptom gathering, session creation, and delegation to `gsd-debug-session-manager`.
 
+<available_agent_types>
+Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+- gsd-debug-session-manager — manages debug checkpoint/continuation loop in isolated context
+- gsd-debugger — investigates bugs using scientific method
+</available_agent_types>
+
 <process>
 
 ## 0. Initialize Context
@@ -139,7 +145,7 @@ If $ARGUMENTS provided OR user describes new issue:
 
 ## 2. Gather Symptoms (if new issue, SUBCMD=debug)
 
-Use AskUserQuestion for each:
+Use AskUserQuestion for each. **TEXT_MODE fallback:** when `workflow.text_mode` is true, replace AskUserQuestion calls with plain-text numbered prompts and wait for typed replies.
 
 1. **Expected behavior** - What should happen?
 2. **Actual behavior** - What happens instead?
