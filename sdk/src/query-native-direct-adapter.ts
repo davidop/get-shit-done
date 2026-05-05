@@ -24,13 +24,22 @@ export class QueryNativeDirectAdapter {
   }
 
   async dispatchJson(legacyCommand: string, legacyArgs: string[], registryCommand: string, registryArgs: string[]): Promise<unknown> {
-    const result = await this.dispatchResult(legacyCommand, legacyArgs, registryCommand, registryArgs);
-    return result.data;
+    return this.dispatchData(legacyCommand, legacyArgs, registryCommand, registryArgs);
   }
 
   async dispatchRaw(legacyCommand: string, legacyArgs: string[], registryCommand: string, registryArgs: string[]): Promise<string> {
+    const data = await this.dispatchData(legacyCommand, legacyArgs, registryCommand, registryArgs);
+    return formatQueryRawOutput(registryCommand, data).trim();
+  }
+
+  private async dispatchData(
+    legacyCommand: string,
+    legacyArgs: string[],
+    registryCommand: string,
+    registryArgs: string[],
+  ): Promise<unknown> {
     const result = await this.dispatchResult(legacyCommand, legacyArgs, registryCommand, registryArgs);
-    return formatQueryRawOutput(registryCommand, result.data).trim();
+    return result.data;
   }
 
   private toNativeDispatchError(legacyCommand: string, legacyArgs: string[], error: unknown): GSDToolsError {
