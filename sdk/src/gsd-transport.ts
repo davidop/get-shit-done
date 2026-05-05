@@ -54,7 +54,6 @@ export class GSDTransport {
       }
     } else {
       const reason = this.subprocessReason(request, policy);
-      onDecision?.({ dispatchMode: 'subprocess', reason });
       if (!policy.allowFallbackToSubprocess && reason === 'native_unregistered') {
         throw GSDToolsError.failure(
           `Subprocess fallback disabled: command '${request.registryCommand}' cannot run without native dispatch`,
@@ -63,6 +62,7 @@ export class GSDTransport {
           null,
         );
       }
+      onDecision?.({ dispatchMode: 'subprocess', reason });
     }
 
     return this.dispatchSubprocess(request);
@@ -77,7 +77,10 @@ export class GSDTransport {
     if (request.workstream) return 'workstream_forced';
     if (!policy.preferNative) return 'native_not_preferred';
     if (!this.registry.has(request.registryCommand)) return 'native_unregistered';
-    return 'native_not_preferred';
+
+    throw new Error(
+      `Unexpected subprocess reason state for command '${request.registryCommand}' with preferNative=${String(policy.preferNative)} and workstream=${String(request.workstream)}`,
+    );
   }
 
   private shouldRethrowNativeError(error: unknown, policy: TransportPolicyLike): boolean {

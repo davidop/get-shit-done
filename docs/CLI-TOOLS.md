@@ -62,7 +62,7 @@ Use this when authoring workflows, not when you only need the command list below
 | `node gsd-tools.cjs roadmap analyze`     | `gsd-sdk query roadmap analyze`      |
 
 
-**SDK state reads:** `gsd-sdk query state json` / `state.json` and `gsd-sdk query state load` / `state.load` currently share one native handler (rebuilt STATE.md frontmatter — CJS `cmdStateJson`). The legacy CJS `state load` payload (`config`, `state_raw`, existence flags) is still **CLI-only** via `node …/gsd-tools.cjs state load` until a separate registry handler exists. Full routing and golden rules: [QUERY-HANDLERS.md](../sdk/src/query/QUERY-HANDLERS.md).
+**SDK state reads:** `state.json` and `state.load` are both registered query handlers with parity coverage. You can invoke them through `gsd-sdk query …` and through the SDK Runtime Bridge (`GSDTools` → `sdk/src/query-runtime-bridge.ts`), honoring `allowFallbackToSubprocess` / `strictSdk` and emitting `onDispatchEvent` observability. For direct typed dispatch, use `createRegistry()` from `sdk/src/query/index.ts`. Full routing and golden rules: [QUERY-HANDLERS.md](../sdk/src/query/QUERY-HANDLERS.md).
 
 **CLI-only (not in registry):** e.g. **graphify**, **from-gsd2** / **gsd2-import** — call `gsd-tools.cjs` until registered.
 

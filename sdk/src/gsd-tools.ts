@@ -78,7 +78,7 @@ export class GSDTools {
       execJsonFallback: (legacyCommand, legacyArgs) => this.exec(legacyCommand, legacyArgs),
       execRawFallback: (legacyCommand, legacyArgs) => this.execRaw(legacyCommand, legacyArgs),
       strictSdk: opts.strictSdk,
-      allowFallbackToSubprocess: opts.allowFallbackToSubprocess ?? false,
+      allowFallbackToSubprocess: opts.allowFallbackToSubprocess,
       onDispatchEvent: opts.onDispatchEvent,
     });
 

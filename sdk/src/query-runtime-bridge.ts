@@ -40,14 +40,12 @@ export interface RuntimeBridgeHotpathEvent {
   errorKind?: 'timeout' | 'failure';
 }
 
-export interface RuntimeBridgeEvent {
-  type: 'query_dispatch' | 'query_hotpath_dispatch';
-}
+export type RuntimeBridgeEvent = RuntimeBridgeDispatchEvent | RuntimeBridgeHotpathEvent;
 
 export interface RuntimeBridgeOptions {
   strictSdk?: boolean;
   allowFallbackToSubprocess?: boolean;
-  onDispatchEvent?: (event: RuntimeBridgeDispatchEvent | RuntimeBridgeHotpathEvent) => void;
+  onDispatchEvent?: (event: RuntimeBridgeEvent) => void;
 }
 
 /**
@@ -71,6 +69,14 @@ export class QueryRuntimeBridge {
     return resolveQueryCommand(command, args, this.registry);
   }
 
+  private emit(event: RuntimeBridgeEvent): void {
+    try {
+      this.options?.onDispatchEvent?.(event);
+    } catch {
+      // Observability must never break dispatch behavior.
+    }
+  }
+
   async execute(input: RuntimeBridgeExecuteInput): Promise<unknown> {
     const startedAt = Date.now();
     if (this.options?.strictSdk && !this.registry.has(input.registryCommand)) {
@@ -80,12 +86,12 @@ export class QueryRuntimeBridge {
         input.legacyArgs,
         null,
       );
-      this.options?.onDispatchEvent?.({
+      this.emit({
         type: 'query_dispatch',
         command: input.registryCommand,
         legacyCommand: input.legacyCommand,
         mode: input.mode,
-        dispatchMode: 'subprocess',
+        dispatchMode: 'native',
         reason: 'native_unregistered',
         durationMs: Date.now() - startedAt,
         outcome: 'error',
@@ -111,7 +117,7 @@ export class QueryRuntimeBridge {
         },
       });
 
-      this.options?.onDispatchEvent?.({
+      this.emit({
         type: 'query_dispatch',
         command: input.registryCommand,
         legacyCommand: input.legacyCommand,
@@ -124,7 +130,7 @@ export class QueryRuntimeBridge {
       return result;
     } catch (error) {
       const kind = error instanceof GSDToolsError ? error.classification.kind : 'failure';
-      this.options?.onDispatchEvent?.({
+      this.emit({
         type: 'query_dispatch',
         command: input.registryCommand,
         legacyCommand: input.legacyCommand,
@@ -155,7 +161,7 @@ export class QueryRuntimeBridge {
         registryArgs,
         mode,
       );
-      this.options?.onDispatchEvent?.({
+      this.emit({
         type: 'query_hotpath_dispatch',
         command: registryCommand,
         legacyCommand,
@@ -167,7 +173,7 @@ export class QueryRuntimeBridge {
       return result;
     } catch (error) {
       const kind = error instanceof GSDToolsError ? error.classification.kind : 'failure';
-      this.options?.onDispatchEvent?.({
+      this.emit({
         type: 'query_hotpath_dispatch',
         command: registryCommand,
         legacyCommand,

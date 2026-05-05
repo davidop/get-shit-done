@@ -55,7 +55,7 @@ GSD is a **meta-prompting framework** that sits between the user and AI coding a
 ┌──────▼──────────────▼─────────────────▼──────────────┐
 │              CLI TOOLS LAYER                          │
 │   gsd-sdk query (sdk/src/query) + gsd-tools.cjs       │
-│   SDK Runtime Bridge Module routes native vs fallback │
+│   Programmatic SDK bridge: GSDTools/query-runtime-bridge.ts │
 └──────────────────────┬───────────────────────────────┘
                        │
 ┌──────────────────────▼───────────────────────────────┐
