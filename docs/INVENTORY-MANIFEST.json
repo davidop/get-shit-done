@@ -240,7 +240,8 @@
       "user-profiling.md",
       "verification-overrides.md",
       "verification-patterns.md",
-      "workstream-flag.md"
+      "workstream-flag.md",
+      "worktree-path-safety.md"
     ],
     "cli_modules": [
       "artifacts.cjs",
