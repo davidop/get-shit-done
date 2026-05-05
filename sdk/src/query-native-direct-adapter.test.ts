@@ -14,7 +14,7 @@ describe('QueryNativeDirectAdapter', () => {
     });
 
     await expect(adapter.dispatchJson('state', ['load'], 'state.load', [])).rejects.toMatchObject({
-      classification: { kind: 'failure' },
+      classification: GSDToolsError.failure('x', 'state', ['load'], 1).classification,
       command: 'state',
     });
   });

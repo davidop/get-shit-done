@@ -21,9 +21,7 @@ describe('query failure classification', () => {
   });
 
   it('prefers typed classification from GSDToolsError', () => {
-    const err = new GSDToolsError('x', 'state', ['load'], null, '', {
-      classification: { kind: 'timeout', timeoutMs: 2000 },
-    });
+    const err = GSDToolsError.timeout('x', 'state', ['load'], '', 2000);
     expect(toFailureSignal(err)).toEqual({ kind: 'timeout', message: 'x', timeoutMs: 2000 });
   });
 });

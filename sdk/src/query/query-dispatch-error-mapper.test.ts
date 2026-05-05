@@ -27,9 +27,7 @@ describe('query dispatch error mapper', () => {
 
   it('maps typed timeout classification from GSDToolsError', () => {
     const err = mapNativeDispatchError(
-      new GSDToolsError('timeout', 'state', ['load'], null, '', {
-        classification: { kind: 'timeout', timeoutMs: 1234 },
-      }),
+      GSDToolsError.timeout('timeout', 'state', ['load'], '', 1234),
       'state.load',
       [],
     );
@@ -39,9 +37,7 @@ describe('query dispatch error mapper', () => {
 
   it('maps typed failure classification from GSDToolsError', () => {
     const err = mapNativeDispatchError(
-      new GSDToolsError('boom', 'state', ['load'], 1, '', {
-        classification: { kind: 'failure' },
-      }),
+      GSDToolsError.failure('boom', 'state', ['load'], 1),
       'state.load',
       [],
     );
