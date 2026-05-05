@@ -26,7 +26,21 @@ describe('bug #3150: stats.json includes contiguous decimal phases when .10 exis
       const result = runGsdTools('stats json', tmpDir);
       assert.ok(result.success, `Command failed: ${result.error}`);
 
-      const output = JSON.parse(result.output);
+      let output;
+      assert.doesNotThrow(
+        () => {
+          output = JSON.parse(result.output);
+        },
+        `Command output must be valid JSON. Raw output prefix: ${result.output.slice(0, 200)}`
+      );
+      assert.ok(
+        output && typeof output === 'object' && !Array.isArray(output),
+        `Expected object output, got: ${typeof output}`
+      );
+      assert.ok(
+        Array.isArray(output.phases),
+        `Expected output.phases array. Raw output prefix: ${result.output.slice(0, 200)}`
+      );
       const phaseNumbers = output.phases.map((p) => p.number);
 
       assert.deepStrictEqual(
