@@ -14,7 +14,7 @@ Orchestrator coordinates, not executes. Each subagent loads the full execute-pla
   instead of spawning parallel agents. Only attempt parallel spawning if the user
   explicitly requests it — and in that case, rely on the spot-check fallback in step 3
   to detect completion.
-- **Other runtimes:** If `Task`/`task` tool is unavailable, use sequential inline execution as the
+- **Other runtimes:** If `Agent`/`agent` tool is unavailable, use sequential inline execution as the
   fallback. Check for tool availability at runtime rather than assuming based on runtime name.
 
 **Fallback rule:** If a spawned agent completes its work (commits visible, SUMMARY.md exists) but
@@ -73,7 +73,7 @@ AGENT_SKILLS=$(gsd-sdk query agent-skills gsd-executor)
 
 Parse JSON for: `executor_model`, `verifier_model`, `commit_docs`, `parallelization`, `branching_strategy`, `branch_name`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `plans`, `incomplete_plans`, `plan_count`, `incomplete_count`, `state_exists`, `roadmap_exists`, `phase_req_ids`, `response_language`.
 
-**Model resolution:** If `executor_model` is `"inherit"`, omit the `model=` parameter from all `Agent()` calls — do NOT pass `model="inherit"` to Task. Omitting the `model=` parameter causes Claude Code to inherit the current orchestrator model automatically. Only set `model=` when `executor_model` is an explicit model name (e.g., `"claude-sonnet-4-6"`, `"claude-opus-4-7"`).
+**Model resolution:** If `executor_model` is `"inherit"`, omit the `model=` parameter from all `Agent()` calls — do NOT pass `model="inherit"` to Agent. Omitting the `model=` parameter causes Claude Code to inherit the current orchestrator model automatically. Only set `model=` when `executor_model` is an explicit model name (e.g., `"claude-sonnet-4-6"`, `"claude-opus-4-7"`).
 
 **If `response_language` is set:** Include `response_language: {value}` in all spawned subagent prompts so any user-facing output stays in the configured language.
 
@@ -474,7 +474,7 @@ increases monotonically across waves. `{status}` is `complete` (success),
 
    **Sequential dispatch for parallel execution (waves with 2+ agents):**
    When spawning multiple agents in a wave, dispatch each `Agent()` call **one at a time
-   with `run_in_background: true`** — do NOT send all Task calls in a single message.
+   with `run_in_background: true`** — do NOT send all Agent calls in a single message.
    `git worktree add` acquires an exclusive lock on `.git/config.lock`, so simultaneous
    calls race for this lock and fail. Sequential dispatch ensures each worktree finishes
    creation before the next begins (the round-trip latency of each tool call provides
@@ -597,7 +597,7 @@ increases monotonically across waves. `{status}` is `complete` (success),
 
    **Sequential mode** (`USE_WORKTREES_FOR_PLAN` is `false` — either project-level `USE_WORKTREES=false`, or per-plan submodule intersection forced it false in step 2.5):
 
-   Omit `isolation="worktree"` from the Task call. Replace the `<parallel_execution>` block with:
+   Omit `isolation="worktree"` from the Agent call. Replace the `<parallel_execution>` block with:
 
    ```
        <sequential_execution>
@@ -607,7 +607,7 @@ increases monotonically across waves. `{status}` is `complete` (success),
        </sequential_execution>
    ```
 
-   The sequential mode Task prompt uses the same structure as worktree mode but with these differences in success_criteria — since there is only one agent writing at a time, there are no shared-file conflicts:
+   The sequential mode Agent prompt uses the same structure as worktree mode but with these differences in success_criteria — since there is only one agent writing at a time, there are no shared-file conflicts:
 
    ```
        <success_criteria>
@@ -1632,7 +1632,7 @@ STOP. Do not proceed to auto-advance or transition.
 ╚══════════════════════════════════════════╝
 ```
 
-Execute the transition workflow inline (do NOT use Task — orchestrator context is ~10-15%, transition needs phase completion data already in context):
+Execute the transition workflow inline (do NOT use Agent — orchestrator context is ~10-15%, transition needs phase completion data already in context):
 
 Read and follow `~/.claude/get-shit-done/workflows/transition.md`, passing through the `--auto` flag so it propagates to the next phase invocation.
 
@@ -1677,7 +1677,7 @@ Only suggest the commands listed above. Do not invent or hallucinate command nam
 
 <context_efficiency>
 Orchestrator: ~10-15% context for 200k windows, can use more for 1M+ windows.
-Subagents: fresh context each (200k-1M depending on model). No polling (Task blocks). No context bleed.
+Subagents: fresh context each (200k-1M depending on model). No polling (Agent blocks). No context bleed.
 
 For 1M+ context models, consider:
 - Passing richer context (code snippets, dependency outputs) directly to executors instead of just file paths
