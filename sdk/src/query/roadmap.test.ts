@@ -509,6 +509,31 @@ describe('extractCurrentMilestone', () => {
     expect(result).toMatch(/^##\s+v0\.9 Local-First Bus/m);
   });
 
+  it('bug-2641: v0.1 must not substring-match v0.10 in markdown heading anchor path', async () => {
+    const roadmap = `# Roadmap
+
+## v0.10 Future Milestone
+
+### Phase 7: Wrong Phase
+**Goal:** This is from v0.10, not v0.1.
+
+## v0.1 Active Milestone
+
+### Phase 1: Right Phase
+**Goal:** This is the active milestone.
+`;
+    const state = `---\nmilestone: v0.1\n---\n# State\n`;
+    await writeFile(join(tmpDir, '.planning', 'STATE.md'), state);
+    await writeFile(join(tmpDir, '.planning', 'ROADMAP.md'), roadmap);
+
+    const result = await extractCurrentMilestone(roadmap, tmpDir);
+
+    expect(result).toContain('### Phase 1: Right Phase');
+    expect(result).toContain('This is the active milestone');
+    expect(result).not.toContain('Phase 7: Wrong Phase');
+    expect(result).not.toContain('This is from v0.10');
+  });
+
   // ─── Bug #2641 (review hardening): substring-version trap ───
   it('bug-2641: v0.1 must not substring-match <summary>v0.10 …</summary>', async () => {
     // The fallback regex anchors on `escapedVersion` inside `<summary>` text.

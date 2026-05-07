@@ -201,7 +201,7 @@ export async function extractCurrentMilestone(content: string, projectDir: strin
   // Find section matching this version
   const escapedVersion = escapeRegex(version);
   const sectionPattern = new RegExp(
-    `(^#{1,3}\\s+.*${escapedVersion}[^\\n]*)`,
+    `(^#{1,3}\\s+.*${escapedVersion}(?![\\d.])[^\\n]*)`,
     'mi'
   );
   const sectionMatch = content.match(sectionPattern);
