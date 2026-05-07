@@ -50,6 +50,11 @@ describe('Bug #3181: normalizeNodePath — Intel Homebrew Cellar paths → /usr/
     const result = normalizeNodePath('/usr/local/Cellar/node/22.0.0-rc.1/bin/node');
     assert.equal(result, '/usr/local/bin/node');
   });
+
+  test('Intel versioned formula Cellar path (node@20) maps to stable symlink', () => {
+    const result = normalizeNodePath('/usr/local/Cellar/node@20/20.11.0/bin/node');
+    assert.equal(result, '/usr/local/bin/node');
+  });
 });
 
 describe('Bug #3181: normalizeNodePath — Apple Silicon Homebrew Cellar paths → /opt/homebrew/bin/node', () => {
@@ -60,6 +65,11 @@ describe('Bug #3181: normalizeNodePath — Apple Silicon Homebrew Cellar paths �
 
   test('Apple Silicon Cellar path with another version', () => {
     const result = normalizeNodePath('/opt/homebrew/Cellar/node/18.20.4/bin/node');
+    assert.equal(result, '/opt/homebrew/bin/node');
+  });
+
+  test('Apple Silicon versioned formula Cellar path (node@18) maps to stable symlink', () => {
+    const result = normalizeNodePath('/opt/homebrew/Cellar/node@18/18.20.4/bin/node');
     assert.equal(result, '/opt/homebrew/bin/node');
   });
 });

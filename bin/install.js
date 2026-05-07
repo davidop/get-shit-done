@@ -543,11 +543,13 @@ function computePathPrefix({ isGlobal, isOpencode, isWindowsHost: _isWindowsHost
 function normalizeNodePath(execPath) {
   if (!execPath) return execPath;
   // Intel Homebrew: /usr/local/Cellar/node/<version>/bin/node
-  if (/^\/usr\/local\/Cellar\/node\/[^/]+\/bin\/node(\.exe)?$/.test(execPath)) {
+  // or /usr/local/Cellar/node@20/<version>/bin/node
+  if (/^\/usr\/local\/Cellar\/node(@\d+)?\/[^/]+\/bin\/node(\.exe)?$/.test(execPath)) {
     return '/usr/local/bin/node';
   }
   // Apple Silicon Homebrew: /opt/homebrew/Cellar/node/<version>/bin/node
-  if (/^\/opt\/homebrew\/Cellar\/node\/[^/]+\/bin\/node(\.exe)?$/.test(execPath)) {
+  // or /opt/homebrew/Cellar/node@18/<version>/bin/node
+  if (/^\/opt\/homebrew\/Cellar\/node(@\d+)?\/[^/]+\/bin\/node(\.exe)?$/.test(execPath)) {
     return '/opt/homebrew/bin/node';
   }
   return execPath;
