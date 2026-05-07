@@ -36,6 +36,61 @@ const HOOKS_TO_COPY = [
   'gsd-phase-boundary.sh'
 ];
 
+// Sync millisecond sleep using Atomics.wait on a throwaway SharedArrayBuffer.
+// Used between Windows rename retries; this script is sync end-to-end so
+// setTimeout would not work. Total worst-case backoff across MAX_ATTEMPTS
+// is bounded (~400ms) — acceptable for a one-shot build script.
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+/**
+ * Atomic-replace via fs.renameSync, with Windows-only retry and fallback.
+ *
+ * POSIX rename(2) atomically replaces dest even when readers hold open
+ * handles on it. Windows MoveFileEx (which fs.renameSync uses with
+ * MOVEFILE_REPLACE_EXISTING) cannot — it throws EPERM/EBUSY when another
+ * process has the destination open. Concurrent install.js readers and
+ * antivirus scanners are the realistic triggers; both release handles
+ * within milliseconds, so a short backoff resolves the race. After
+ * retries are exhausted, fall back to copy-then-unlink (re-introduces
+ * the truncate-then-write race for this single file but keeps the build
+ * moving rather than crashing). If even copy fails because dest is hard-
+ * locked, log a non-fatal warning and leave the prior dest in place — a
+ * subsequent build invocation will retry from a fresh state.
+ */
+function renameAtomicWithRetry(stagedDest, dest, hook) {
+  if (process.platform !== 'win32') {
+    fs.renameSync(stagedDest, dest);
+    return;
+  }
+  const BACKOFFS_MS = [10, 30, 90, 270];
+  for (let attempt = 0; attempt <= BACKOFFS_MS.length; attempt++) {
+    try {
+      fs.renameSync(stagedDest, dest);
+      return;
+    } catch (e) {
+      const transient = e && (e.code === 'EPERM' || e.code === 'EBUSY');
+      if (!transient) throw e;
+      if (attempt < BACKOFFS_MS.length) {
+        sleepSync(BACKOFFS_MS[attempt]);
+        continue;
+      }
+      // Retries exhausted; fall back to copy-then-unlink.
+      try {
+        fs.copyFileSync(stagedDest, dest);
+        try { fs.unlinkSync(stagedDest); } catch (_) { /* tolerate */ }
+        console.warn(`\x1b[33m! ${hook}: rename failed (${e.code}) after ${BACKOFFS_MS.length} retries; used copy-fallback\x1b[0m`);
+        return;
+      } catch (fallbackErr) {
+        try { fs.unlinkSync(stagedDest); } catch (_) { /* tolerate */ }
+        console.warn(`\x1b[33m! ${hook}: rename + copy fallback both failed (${e.code} → ${fallbackErr.code || fallbackErr.message}); leaving prior dest in place\x1b[0m`);
+        return;
+      }
+    }
+  }
+}
+
 /**
  * Validate JavaScript syntax without executing the file.
  * Catches SyntaxError (duplicate const, missing brackets, etc.)
@@ -106,7 +161,7 @@ function build() {
     if (hook.endsWith('.sh')) {
       try { fs.chmodSync(stagedDest, 0o755); } catch (e) { /* Windows */ }
     }
-    fs.renameSync(stagedDest, dest);
+    renameAtomicWithRetry(stagedDest, dest, hook);
   }
 
   // Best-effort cleanup of the staging dir. If concurrent builders are still
