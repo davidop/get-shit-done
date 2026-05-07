@@ -9,6 +9,18 @@ on:
         description: Reviewer login to retroactively sweep
         required: false
         default: ari4ka
+      pr_state:
+        description: Pull request state to scan (open, closed, all)
+        required: false
+        default: all
+      page:
+        description: PR results page to scan (1-indexed)
+        required: false
+        default: '1'
+      batch_size:
+        description: Number of PRs to scan in this run (max 100)
+        required: false
+        default: '25'
   schedule:
     - cron: '17 4 * * *'
 
@@ -119,21 +131,41 @@ jobs:
               return;
             }
 
-            // Retroactive sweep: dismiss prior approvals on all PRs
+            // Retroactive sweep: dismiss prior approvals in one PR batch per run
             const blockedReviewer = norm(core.getInput('blocked_reviewer') || 'ari4ka');
 
-            const pulls = await github.paginate(github.rest.pulls.list, {
+            function parsePositiveInt(rawValue, fallback, max) {
+              const parsed = Number.parseInt(String(rawValue || ''), 10);
+              if (!Number.isFinite(parsed) || parsed < 1) return fallback;
+              return Math.min(parsed, max);
+            }
+
+            const requestedState = norm(core.getInput('pr_state') || 'all');
+            const prState = ['open', 'closed', 'all'].includes(requestedState) ? requestedState : 'all';
+            const page = parsePositiveInt(core.getInput('page'), 1, 1000000);
+            const batchSize = parsePositiveInt(core.getInput('batch_size'), 25, 100);
+
+            const pullsResp = await github.rest.pulls.list({
               owner,
               repo,
-              state: 'all',
-              per_page: 100,
+              state: prState,
+              sort: 'updated',
+              direction: 'desc',
+              per_page: batchSize,
+              page,
             });
+            const pulls = pullsResp.data;
+
+            core.info(
+              `Retroactive sweep batch starting: reviewer=${blockedReviewer}, state=${prState}, page=${page}, batch_size=${batchSize}, pulled=${pulls.length}.`
+            );
 
             let scannedPrs = 0;
             let dismissedCount = 0;
 
             for (const pr of pulls) {
               scannedPrs += 1;
+              core.info(`Scanning PR #${pr.number} (${scannedPrs}/${pulls.length})`);
 
               const reviews = await github.paginate(github.rest.pulls.listReviews, {
                 owner,
@@ -161,5 +193,5 @@ jobs:
             }
 
             core.info(
-              `Retroactive sweep complete. Scanned ${scannedPrs} PR(s); dismissed ${dismissedCount} approval(s) from ${blockedReviewer}.`
+              `Retroactive sweep batch complete. State=${prState}, page=${page}, scanned ${scannedPrs} PR(s), dismissed ${dismissedCount} approval(s) from ${blockedReviewer}.`
             );
